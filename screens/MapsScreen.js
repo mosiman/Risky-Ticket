@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Constants, Location, Permissions } from 'expo';
 
-import MapView, {AnimatedRegion, Animated} from 'react-native-maps';
+import MapView, {Marker, AnimatedRegion, Animated} from 'react-native-maps';
 
 import { MonoText } from '../components/StyledText';
 
@@ -28,6 +28,8 @@ export default class MapsScreen extends React.Component{
                 latitudeDelta: 0.0922,
                 longitudeDelta: 0.0421,
             },
+			id: 0,
+            markers: [],
         };
     };
 		
@@ -53,11 +55,46 @@ export default class MapsScreen extends React.Component{
             this.setState({region: {
                 latitude: loc.coords.latitude,
                 longitude: loc.coords.longitude,
-                latitudeDelta: this.state.region.latitudeDelta,
-                longitudeDelta: this.state.region.longitudeDelta,
+                latitudeDelta: 0.008,
+                longitudeDelta: 0.008,
             }});
             this.map.animateToRegion(this.state.region);
         });
+    };
+
+    onMapPress = (e) => {
+        console.log(e);
+        // e.nativeEvent is what we want
+        // e.g.,
+        // e.nativeEvent.coordinate.latitude
+        // e.nativeEvent.position.y
+        //      // ^ screen position probably?
+        //
+        // On map press, put a marker at press.
+		this.setState({
+		  markers: [
+			{
+			  coordinate: e.nativeEvent.coordinate,
+			  key: this.state.id++,
+			  color: '#ff0000',
+              title: "Loading data for " + JSON.stringify(e.nativeEvent.coordinate),
+			},
+		  ],
+		});
+
+        // Now, let's grab the data from my REST api
+        // fetch returns promises
+        console.log(" calling REST api ")
+        let apiCall = fetch('http://mosiman.ca/parkingtoronto/streetsegapi', {
+            method: 'POST', 
+            body: JSON.stringify({
+                lat: e.nativeEvent.coordinate.latitude,
+                lng: e.nativeEvent.coordinate.longitude,
+            })
+        })
+        apiCall.then( (resp) => {
+            console.log(resp)
+        })
     };
 
     render(){
@@ -66,7 +103,17 @@ export default class MapsScreen extends React.Component{
                 style={{ flex: 1 }}
                 ref = {(map) => {this.map = map}}
                 initialRegion={this.state.region}
-            />
+                onPress={ (e) => this.onMapPress(e) }
+            >
+            {this.state.markers.map(marker => (
+                <Marker
+                  key={marker.key}
+                  coordinate={marker.coordinate}
+                  pinColor={marker.color}
+                  title={marker.title}
+                />
+            ))}
+            </MapView>
         );
     }
 }
