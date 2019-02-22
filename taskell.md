@@ -1,5 +1,7 @@
 ## To Do
 
+- Get rid of boilerplate template stuff 
+- Figure out how to get a nice box/whisker plot
 
 ## Doing
 
